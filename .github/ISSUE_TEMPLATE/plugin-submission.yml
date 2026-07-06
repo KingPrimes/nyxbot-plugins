@@ -1,0 +1,138 @@
+name: 插件提交
+description: 向 NyxBot 插件市场提交一个新插件
+labels: ["plugin-submission"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提交插件！请认真填写以下信息。
+        - **jar 下载地址**必须指向 GitHub Release 直链（作者自己仓库的 Release）
+        - **fileSize / sha256** 无需填写，工作流会自动计算
+        - 提交后工作流自动校验，校验通过会创建 PR 等待审核
+
+  - type: input
+    id: name
+    attributes:
+      label: 插件唯一标识名
+      description: 全小写英文，用 `-` 分隔，如 `draw-alerts`。对应索引 key。
+      placeholder: draw-alerts
+    validations:
+      required: true
+
+  - type: input
+    id: displayName
+    attributes:
+      label: 展示名称
+      description: 中文或英文展示名
+      placeholder: 警报绘图插件
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 插件描述
+      description: 一句话说明插件功能
+      placeholder: 渲染 Warframe 警报信息为图片
+    validations:
+      required: true
+
+  - type: input
+    id: author
+    attributes:
+      label: 作者 GitHub 用户名
+      placeholder: KingPrimes
+    validations:
+      required: true
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: 插件类型
+      description: jar=纯 Java 插件；native=含 JNA 原生库插件
+      options:
+        - jar
+        - native
+    validations:
+      required: true
+
+  - type: input
+    id: repository
+    attributes:
+      label: 源代码仓库
+      description: 格式 owner/repo，必须公开可访问
+      placeholder: KingPrimes/nyxbot-draw-plugin
+    validations:
+      required: true
+
+  - type: input
+    id: license
+    attributes:
+      label: 许可证
+      description: SPDX 标识符，如 MIT、GPL-3.0、Apache-2.0
+      placeholder: MIT
+    validations:
+      required: true
+
+  - type: input
+    id: homepage
+    attributes:
+      label: 项目主页 URL
+      description: 可选，留空填 `-`
+      placeholder: https://github.com/KingPrimes/nyxbot-draw-plugin
+    validations:
+      required: false
+
+  - type: input
+    id: iconUrl
+    attributes:
+      label: 图标 URL
+      description: 可选，留空填 `-`
+      placeholder: https://raw.githubusercontent.com/.../icon.png
+    validations:
+      required: false
+
+  - type: input
+    id: tags
+    attributes:
+      label: 标签
+      description: 逗号分隔，如 draw,native,jna
+      placeholder: draw
+    validations:
+      required: false
+
+  - type: input
+    id: version
+    attributes:
+      label: 版本号
+      description: 语义版本号，如 1.0.0
+      placeholder: 1.0.0
+    validations:
+      required: true
+
+  - type: input
+    id: downloadUrl
+    attributes:
+      label: jar 下载地址
+      description: GitHub Release 直链，必须以 .jar 结尾且可公开下载
+      placeholder: https://github.com/KingPrimes/nyxbot-draw-plugin/releases/download/v1.0.0/draw-alerts-1.0.0.jar
+    validations:
+      required: true
+
+  - type: input
+    id: requires
+    attributes:
+      label: 最低 Java 版本要求
+      description: 如 >=21
+      placeholder: ">=21"
+    validations:
+      required: true
+
+  - type: textarea
+    id: releaseNotes
+    attributes:
+      label: 版本发布说明
+      description: 本版本的功能/修复说明
+      placeholder: 首次发布
+    validations:
+      required: false

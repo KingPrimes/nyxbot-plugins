@@ -1,0 +1,105 @@
+name: 插件提交校验
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write       # 创建 PR 分支 + 提交
+  pull-requests: write  # 创建 PR
+  issues: write         # 评论 issue + 加标签
+
+jobs:
+  validate-and-pr:
+    # 仅响应「插件提交」模板（带 plugin-submission 标签）
+    if: contains(github.event.issue.labels.*.name, 'plugin-submission')
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出仓库
+        uses: actions/checkout@v4
+
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 运行校验脚本
+        id: validate
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node .github/scripts/update-index.mjs
+
+      - name: 创建 PR
+        if: success()
+        uses: peter-evans/create-pull-request@v6
+        with:
+          branch: ${{ steps.validate.outputs.branch }}
+          commit-message: |
+            feat(plugins): ➕ 新增插件 ${{ steps.validate.outputs.plugin_name }} v${{ steps.validate.outputs.plugin_version }}
+
+            来源 issue: #${{ github.event.issue.number }}
+          title: |
+            [插件] 新增 ${{ steps.validate.outputs.plugin_name }} v${{ steps.validate.outputs.plugin_version }}
+          body: |
+            ${{ env.GITHUB_STEP_SUMMARY && format('校验报告见 Workflow Summary。' ) || '' }}
+
+            关联 issue: #${{ github.event.issue.number }}
+
+            请审核后合并。合并后会自动关闭关联 issue。
+          labels: |
+            plugin-submission
+            auto-generated
+          assignees: ${{ github.event.issue.user.login }}
+
+      - name: 校验失败 - 评论并加标签
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: issueNumber,
+              body: [
+                '❌ **插件校验失败**',
+                '',
+                '请查看 [Workflow 运行日志](' +
+                  `https://github.com/${owner}/${repo}/actions/runs/${context.runId}` +
+                ') 中的 `运行校验脚本` 步骤，根据报错修正后重新提交 issue。',
+                '',
+                '常见原因：',
+                '- 必填字段缺失',
+                '- 插件名格式非法（只允许小写字母、数字、短横线）',
+                '- `repository` 不是公开仓库',
+                '- `downloadUrl` 非 GitHub Release 直链或不可访问',
+                '- 插件名与已有插件重名',
+              ].join('\n')
+            });
+            await github.rest.issues.addLabels({
+              owner, repo, issue_number: issueNumber,
+              labels: ['invalid']
+            });
+
+      - name: 校验通过 - 评论 PR 链接
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const branch = '${{ steps.validate.outputs.branch }}';
+            await github.rest.issues.createComment({
+              owner, repo, issue_number: issueNumber,
+              body: [
+                '✅ **插件校验通过**',
+                '',
+                '已自动创建 PR，等待仓库 owner 审核合并：',
+                `https://github.com/${owner}/${repo}/pulls?q=head:${branch}`,
+                '',
+                '合并后本 issue 将自动关闭。',
+              ].join('\n')
+            });

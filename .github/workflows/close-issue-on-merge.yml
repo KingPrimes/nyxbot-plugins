@@ -1,0 +1,58 @@
+name: PR 合并后关闭关联 issue
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  close-linked-issue:
+    # 仅在 PR 被 merge（非直接关闭）时执行
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - name: 从 PR 提取关联 issue 号并关闭
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+
+            // 从 PR title 中提取「新增 {name} v{version}」无 issue 号；
+            // 从 commit message 提取 "来源 issue: #N" 中的 N
+            const re = /(?:来源\s*issue|关联\s*issue|closes|fixes|resolves)\s*#?(\d+)/i;
+            const m = (pr.body || '') + '\n' + (pr.title || '');
+            // 还需扫 commit message
+            const commits = await github.rest.pulls.listCommits({
+              owner, repo, pull_number: pr.number
+            });
+            let issueNumber = null;
+            for (const c of commits.data) {
+              const cm = c.commit.message || '';
+              const r = cm.match(/(?:来源\s*issue|关联\s*issue)\D+(\d+)/i);
+              if (r) { issueNumber = parseInt(r[1], 10); break; }
+            }
+
+            if (!issueNumber) {
+              // 再退一步：从 PR labels 判断是 plugin-submission，尝试从分支名 plugin/{name}-{ver} 反查
+              core.info('未在 PR body/title/commit 中找到关联 issue 号，跳过');
+              return;
+            }
+
+            core.info(`关闭关联 issue #${issueNumber}`);
+            try {
+              await github.rest.issues.createComment({
+                owner, repo, issue_number: issueNumber,
+                body: `✅ PR #${pr.number} 已合并，插件已添加到 \`plugin-index.json\`。本 issue 自动关闭。`
+              });
+              await github.rest.issues.update({
+                owner, repo, issue_number: issueNumber,
+                state: 'closed'
+              });
+            } catch (e) {
+              core.warning(`关闭 issue #${issueNumber} 失败: ${e.message}`);
+            }
