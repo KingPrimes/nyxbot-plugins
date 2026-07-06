@@ -6,8 +6,9 @@ body:
     attributes:
       value: |
         感谢提交插件！请认真填写以下信息。
-        - **jar 下载地址**必须指向 GitHub Release 直链（作者自己仓库的 Release）
-        - **fileSize / sha256** 无需填写，工作流会自动计算
+        - **版本号和下载地址无需填写**，工作流会自动从你仓库的最新 Release 获取
+        - **fileSize / sha256** 也由工作流自动计算
+        - 你的仓库需要先发布一个 GitHub Release（含 `.jar` 资产）
         - 提交后工作流自动校验，校验通过会创建 PR 等待审核
 
   - type: input
@@ -60,7 +61,7 @@ body:
     id: repository
     attributes:
       label: 源代码仓库
-      description: 格式 owner/repo，必须公开可访问
+      description: 格式 owner/repo，必须公开可访问，且已发布至少一个 Release
       placeholder: KingPrimes/nyxbot-draw-plugin
     validations:
       required: true
@@ -102,22 +103,13 @@ body:
       required: false
 
   - type: input
-    id: version
+    id: jarAssetName
     attributes:
-      label: 版本号
-      description: 语义版本号，如 1.0.0
-      placeholder: 1.0.0
+      label: jar 资产名
+      description: 可选。仅当 Release 含多个 .jar 文件时需要指定；单个 jar 留空即可
+      placeholder: draw-alerts-1.0.0.jar
     validations:
-      required: true
-
-  - type: input
-    id: downloadUrl
-    attributes:
-      label: jar 下载地址
-      description: GitHub Release 直链，必须以 .jar 结尾且可公开下载
-      placeholder: https://github.com/KingPrimes/nyxbot-draw-plugin/releases/download/v1.0.0/draw-alerts-1.0.0.jar
-    validations:
-      required: true
+      required: false
 
   - type: input
     id: requires
@@ -127,12 +119,3 @@ body:
       placeholder: ">=21"
     validations:
       required: true
-
-  - type: textarea
-    id: releaseNotes
-    attributes:
-      label: 版本发布说明
-      description: 本版本的功能/修复说明
-      placeholder: 首次发布
-    validations:
-      required: false

@@ -1,0 +1,30 @@
+name: 插件更新
+description: 为已有插件添加新版本（从作者仓库最新 Release 自动拉取）
+labels: ["plugin-update"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        用于为**已收录**的插件添加新版本。
+        - 只需填写插件标识名，工作流会自动从作者仓库的最新 Release 拉取版本号、jar 和校验信息
+        - **repository 从索引读取**（不允许在 issue 中覆盖，防冒充）
+        - 若新版本号已存在于索引中，校验会失败
+        - 提交后工作流自动校验，校验通过会创建 PR 等待审核
+
+  - type: input
+    id: name
+    attributes:
+      label: 插件标识名
+      description: 要更新的插件唯一标识名（必须已存在于索引中）
+      placeholder: draw-alerts
+    validations:
+      required: true
+
+  - type: input
+    id: jarAssetName
+    attributes:
+      label: jar 资产名
+      description: 可选。仅当 Release 含多个 .jar 文件时需要指定；单个 jar 留空即可
+      placeholder: draw-alerts-2.0.0.jar
+    validations:
+      required: false

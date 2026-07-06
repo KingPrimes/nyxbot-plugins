@@ -1,4 +1,4 @@
-name: 插件提交校验
+name: 插件更新校验
 
 on:
   issues:
@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   validate-and-pr:
-    if: contains(github.event.issue.labels.*.name, 'plugin-submission')
+    if: contains(github.event.issue.labels.*.name, 'plugin-update')
     runs-on: ubuntu-latest
     steps:
       - name: 检出仓库
@@ -22,13 +22,13 @@ jobs:
         with:
           node-version: '20'
 
-      - name: 运行校验脚本
+      - name: 运行更新校验脚本
         id: validate
         env:
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node .github/scripts/update-index.mjs
+        run: node .github/scripts/update-plugin.mjs
 
       - name: 创建 PR
         if: success()
@@ -36,11 +36,11 @@ jobs:
         with:
           branch: ${{ steps.validate.outputs.branch }}
           commit-message: |
-            feat(plugins): ➕ 新增插件 ${{ steps.validate.outputs.plugin_name }} v${{ steps.validate.outputs.plugin_version }}
+            feat(plugins): ⬆️ 更新插件 ${{ steps.validate.outputs.plugin_name }} v${{ steps.validate.outputs.plugin_version }}
 
             来源 issue: #${{ github.event.issue.number }}
           title: |
-            [插件] 新增 ${{ steps.validate.outputs.plugin_name }} v${{ steps.validate.outputs.plugin_version }}
+            [插件] 更新 ${{ steps.validate.outputs.plugin_name }} v${{ steps.validate.outputs.plugin_version }}
           body: |
             校验报告见 Workflow Summary。
 
@@ -48,7 +48,7 @@ jobs:
 
             请审核后合并。合并后会自动关闭关联 issue。
           labels: |
-            plugin-submission
+            plugin-update
             auto-generated
           assignees: ${{ github.event.issue.user.login }}
 
@@ -63,19 +63,17 @@ jobs:
             await github.rest.issues.createComment({
               owner, repo, issue_number: issueNumber,
               body: [
-                '❌ **插件校验失败**',
+                '❌ **插件更新校验失败**',
                 '',
                 '请查看 [Workflow 运行日志](' +
                   `https://github.com/${owner}/${repo}/actions/runs/${context.runId}` +
-                ') 中的 `运行校验脚本` 步骤，根据报错修正后重新提交 issue。',
+                ') 中的 `运行更新校验脚本` 步骤，根据报错修正后重新提交 issue。',
                 '',
                 '常见原因：',
-                '- 必填字段缺失',
-                '- 插件名格式非法（只允许小写字母、数字、短横线）',
-                '- `repository` 不是公开仓库',
-                '- 仓库没有任何 Release，或 Release 不含 .jar 资产',
+                '- 插件标识名不存在于索引中（如需新增请用「插件提交」模板）',
+                '- 作者仓库没有任何 Release，或 Release 不含 .jar 资产',
                 '- Release 含多个 .jar 资产但未指定「jar 资产名」',
-                '- 插件名与已有插件重名（如需更新请用「插件更新」模板）',
+                '- 新版本号已存在于索引中（该版本已收录）',
               ].join('\n')
             });
             await github.rest.issues.addLabels({
@@ -95,7 +93,7 @@ jobs:
             await github.rest.issues.createComment({
               owner, repo, issue_number: issueNumber,
               body: [
-                '✅ **插件校验通过**',
+                '✅ **插件更新校验通过**',
                 '',
                 '已自动创建 PR，等待仓库 owner 审核合并：',
                 `https://github.com/${owner}/${repo}/pulls?q=head:${branch}`,
