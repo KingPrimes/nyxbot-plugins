@@ -51,8 +51,8 @@ body:
     attributes:
       label: 插件类型
       description: |
-        jar=纯 Java 插件
-        native=含 JNA 原生库插件，仍以 .jar 形式发布——将各平台原生库内嵌 jar（JNA classpath 模式），详见仓库 README
+        jar=纯 Java 插件，可自动下载安装
+        native=含 JNA 原生库插件，仅登记元数据，用户需手动下载 .dll/.so/.dylib 部署到 ./plugin/ 目录（详见仓库 README）
       options:
         - jar
         - native
