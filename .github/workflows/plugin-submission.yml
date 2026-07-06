@@ -11,7 +11,11 @@ permissions:
 
 jobs:
   validate-and-pr:
+    # 三重校验：必须是 plugin-submission 标签 + opened + issue body 含模板特征字段
     if: contains(github.event.issue.labels.*.name, 'plugin-submission')
+        && contains(github.event.issue.body, '### 插件唯一标识名')
+        && contains(github.event.issue.body, '### 源代码仓库')
+        && contains(github.event.issue.body, '### 许可证')
     runs-on: ubuntu-latest
     steps:
       - name: 检出仓库
